@@ -1,5 +1,15 @@
 import os
 
+def read_vocabulary():
+	vocabulary = []
+
+	if os.path.exists("vocabulary.txt"):
+		with open("vocabulary.txt") as read:
+			for word in read:
+				vocabulary.append(word.strip())
+
+	return vocabulary
+
 def word_in(word, lst):
 	start = 0
 	end = len(lst) - 1
@@ -27,13 +37,7 @@ def word_in(word, lst):
 	else:
 		return (True, -1)
 
-vocabulary = []
-
-# reading vocabulary
-if os.path.exists("vocabulary.txt"):
-	with open("vocabulary.txt") as read:
-		for word in read:
-			vocabulary.append(word.strip())
+vocabulary = read_vocabulary()
 
 # choice
 choice = int(input("Add words - 1\nGet words - 2\n"))
@@ -49,7 +53,7 @@ if choice == 1:
 			if not word_in_vocabulary:
 				vocabulary.insert(index, word.strip())
 
-	# output
+	# output in file
 	with open("vocabulary.txt", 'w') as out:
 		for word in vocabulary:
 			out.write(word + '\n')
@@ -61,20 +65,25 @@ else:
 	with open(path) as read:
 		for line in read:
 			for word in line.split():
-				if word.istitle() and len(word) > 1:
+				if (word.istitle() or word.isupper()) and len(word) > 1:
 					word = word.lower()
 
-				while not word.isalpha():
-					word = word[:-1]
+				if not word.isalpha():
+					right_word = ''
+					for w in word:
+						if w.isalpha():
+							right_word += w
+
+					word = right_word
 
 				if len(word) != 0:
 					word_was_added, index = word_in(word, words)
 					word_in_vocabulary, nothing = word_in(word, vocabulary)
 
-				if not word_was_added and not word_in_vocabulary:
-					words.append(word)
+					if not word_was_added and not word_in_vocabulary:
+						words.insert(index, word)
 
-	# output
+	# output in file
 	with open(output_path, 'w') as out:
 		for word in words:
 			out.write(word + '\n')
