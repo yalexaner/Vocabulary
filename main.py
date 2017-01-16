@@ -65,16 +65,20 @@ else:
 	with open(path) as read:
 		for line in read:
 			for word in line.split():
-				if (word.istitle() or word.isupper()) and len(word) > 1:
-					word = word.lower()
-
 				if not word.isalpha():
 					right_word = ''
+
 					for w in word:
+						if w == '\'':
+							break
+
 						if w.isalpha():
 							right_word += w
 
 					word = right_word
+
+				if (word.istitle() or word.isupper()) and len(word) > 1:
+					word = word.lower()
 
 				if len(word) != 0:
 					word_was_added, index = word_in(word, words)
