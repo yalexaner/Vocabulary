@@ -37,10 +37,22 @@ def word_in(word, lst):
 	else:
 		return (True, -1)
 
+def vocabulary_amount():
+	global vocabulary
+
+	amount = 0
+
+	for i in vocabulary:
+		amount += 1
+
+	return amount
+
 vocabulary = read_vocabulary()
 
 # choice
-choice = int(input("Add words - 1\nGet words - 2\n"))
+choice = int(input("Add words - 1\n" \
+				   "Get words - 2\n" \
+				   "Get number of words in the vocabulary - 3\n"))
 
 if choice == 1:
 	path = str(input("Write file path and name: "))
@@ -57,25 +69,25 @@ if choice == 1:
 	with open("vocabulary.txt", 'w') as out:
 		for word in vocabulary:
 			out.write(word + '\n')
-else:
+elif choice == 2:
 	path = str(input("Write file path and name: "))
 	output_path = str(input("Write file-output path and name: "))
 	words = []
 
-	with open(path) as read:
-		for line in read:
+	with open(path) as file:
+		for line in file:
 			for word in line.split():
 				if not word.isalpha():
-					right_word = ''
+					correct_word = ''
 
-					for w in word:
-						if w == '\'':
+					for symbol in word:
+						if symbol == '\'':
 							break
 
-						if w.isalpha():
-							right_word += w
+						if symbol.isalpha():
+							correct_word += symbol
 
-					word = right_word
+					word = correct_word
 
 				if (word.istitle() or word.isupper()) and len(word) > 1:
 					word = word.lower()
@@ -91,3 +103,5 @@ else:
 	with open(output_path, 'w') as out:
 		for word in words:
 			out.write(word + '\n')
+else:
+	print("Your vocabulary has {} words".format(vocabulary_amount()))
