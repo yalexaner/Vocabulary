@@ -1,4 +1,4 @@
-import os
+import os # path.exists() and system()
 
 def read_vocabulary():
 	vocabulary = []
@@ -47,6 +47,8 @@ def vocabulary_amount():
 
 	return amount
 
+os.system("clear")
+
 vocabulary = read_vocabulary()
 
 # choice
@@ -54,6 +56,7 @@ choice = int(input("Add words - 1\n" \
 				   "Get words - 2\n" \
 				   "Get number of words in the vocabulary - 3\n"))
 
+# refilling vocabulary
 if choice == 1:
 	path = str(input("Write file path and name: "))
 
@@ -69,11 +72,21 @@ if choice == 1:
 	with open("vocabulary.txt", 'w') as out:
 		for word in vocabulary:
 			out.write(word + '\n')
+
+	os.system("clear")
+# working with unknown words
 elif choice == 2:
 	path = str(input("Write file path and name: "))
 	output_path = str(input("Write file-output path and name: "))
-	words = []
 
+	unique_words = []
+
+	total_words_amount = 0
+	unique_words_amount = 0
+	unknown_words_amount = 0
+	unknown_words_procent = 0
+
+	# read and getting unique words
 	with open(path) as file:
 		for line in file:
 			for word in line.split():
@@ -93,15 +106,39 @@ elif choice == 2:
 					word = word.lower()
 
 				if len(word) != 0:
-					word_was_added, index = word_in(word, words)
-					word_in_vocabulary, nothing = word_in(word, vocabulary)
+					word_was_added, index = word_in(word, unique_words)
 
-					if not word_was_added and not word_in_vocabulary:
-						words.insert(index, word)
+					total_words_amount += 1
+
+					if not word_was_added:
+						unique_words.insert(index, word)
+
+						unique_words_amount += 1
+
+	# getting unknown words
+	unknown_words = []
+
+	for word in unique_words:
+		word_in_vocabulary, index = word_in(word, vocabulary)
+
+		if not word_in_vocabulary:
+			unknown_words.append(word)
+
+			unknown_words_amount += 1
 
 	# output in file
 	with open(output_path, 'w') as out:
-		for word in words:
+		for word in unknown_words:
 			out.write(word + '\n')
+
+	# output to screen
+	unknown_words_procent = (unknown_words_amount * 100) / unique_words_amount
+
+	os.system("clear")
+
+	print("Total words:\t{}".format(total_words_amount))
+	print("Unique words:\t{}".format(unique_words_amount))
+	print("Unknown words:\t{}/{:.2f}%".format(unknown_words_amount, unknown_words_procent))
 else:
-	print("Your vocabulary has {} words".format(vocabulary_amount()))
+	os.system("clear")
+	print("Your vocabulary is {} words".format(vocabulary_amount()))
