@@ -1,57 +1,93 @@
 import os # path.exists() and system()
 
-def read_vocabulary():
-	vocabulary = []
+class MyList(list):
 
-	if os.path.exists("vocabulary.txt"):
-		with open("vocabulary.txt") as read:
-			for word in read:
-				vocabulary.append(word.strip())
-
-	return vocabulary
-
-def word_in(word, lst):
-	start = 0
-	end = len(lst) - 1
-	mid = end // 2
-
-	if end == -1:
-		return (False, -1)
-	
-	while end - start > 1:
-		if word < lst[mid]:
-			end = mid - 1
-			mid = (mid - start) // 2 + start
-		elif word > lst[mid]:
-			start = mid + 1
-			mid = (end - mid) // 2 + mid
+	def __init__(self, path = '0'):
+		if path == '0':
+			super(MyList, self).__init__()
 		else:
-			return (True, -1)
+			if os.path.exists(path):
+				with open(path) as file:
+					for word in file:
+						self.append(word.strip())
 
-	if word < lst[start]:
-		return (False, start)
-	elif lst[start] < word < lst[end]:
-		return (False, end)
-	elif lst[start] <= lst[end] < word:
-		return (False, end + 1)
-	else:
-		return (True, -1)
+	def size(self):
+		return len(self)
 
-def vocabulary_amount():
-	global vocabulary
+	def add(self, word):
+		word_in = False
+		index = 0
 
-	amount = 0
+		# check is word in
+		start = 0
+		end = len(self) - 1
+		mid = end // 2
 
-	for i in vocabulary:
-		amount += 1
+		if end == -1:
+			word_in = False
+			index = -1
+		else:
+			while end - start > 1:
+				if word < self[mid]:
+					end = mid - 1
+					mid = (mid - start) // 2 + start
+				elif word > self[mid]:
+					start = mid + 1
+					mid = (end - mid) // 2 + mid
+				else:
+					word_in = True
+					index = -1
+					break
 
-	return amount
+			if not word_in:
+				if word < self[start]:
+					word_in = False
+					index = start
+				elif self[start] < word < self[end]:
+					word_in = False
+					index = end
+				elif self[start] <= self[end] < word:
+					word_in = False
+					index = end + 1
+				else:
+					word_in = True
+					index = -1
+
+		# adding word
+		if not word_in:
+			self.insert(index, word)
+
+	def word_in(self, word):
+		start = 0
+		end = len(self) - 1
+		mid = end // 2
+
+		if end == -1:
+			return False
+		else:
+			while end - start > 1:
+				if word < self[mid]:
+					end = mid - 1
+					mid = (mid - start) // 2 + start
+				elif word > self[mid]:
+					start = mid + 1
+					mid = (end - mid) // 2 + mid
+				else:
+					return True
+
+			if word < self[start]:
+				return False
+			elif self[start] < word < self[end]:
+				return False
+			elif self[start] <= self[end] < word:
+				return False
+			else:
+				return True
 
 os.system("clear")
 
-vocabulary = read_vocabulary()
+vocabulary = MyList("vocabulary.txt")
 
-# choice
 choice = int(input("Add words - 1\n" \
 				   "Get words - 2\n" \
 				   "Get number of words in the vocabulary - 3\n"))
@@ -61,12 +97,9 @@ if choice == 1:
 	path = str(input("Write file path and name: "))
 
 	# adding words
-	with open(path) as read:
-		for word in read:
-			word_in_vocabulary, index = word_in(word.strip(), vocabulary)
-
-			if not word_in_vocabulary:
-				vocabulary.insert(index, word.strip())
+	with open(path) as file:
+		for word in file:
+			vocabulary.add(word.strip())
 
 	# output in file
 	with open("vocabulary.txt", 'w') as out:
@@ -79,12 +112,9 @@ elif choice == 2:
 	path = str(input("Write file path and name: "))
 	output_path = str(input("Write file-output path and name: "))
 
-	unique_words = []
+	unique_words = MyList()
 
 	total_words_amount = 0
-	unique_words_amount = 0
-	unknown_words_amount = 0
-	unknown_words_procent = 0
 
 	# read and getting unique words
 	with open(path) as file:
@@ -106,25 +136,16 @@ elif choice == 2:
 					word = word.lower()
 
 				if len(word) != 0:
-					word_was_added, index = word_in(word, unique_words)
-
 					total_words_amount += 1
 
-					if not word_was_added:
-						unique_words.insert(index, word)
-
-						unique_words_amount += 1
+					unique_words.add(word)
 
 	# getting unknown words
-	unknown_words = []
+	unknown_words = MyList()
 
 	for word in unique_words:
-		word_in_vocabulary, index = word_in(word, vocabulary)
-
-		if not word_in_vocabulary:
-			unknown_words.append(word)
-
-			unknown_words_amount += 1
+		if not vocabulary.word_in(word):
+			unknown_words.add(word)
 
 	# output in file
 	with open(output_path, 'w') as out:
@@ -132,6 +153,8 @@ elif choice == 2:
 			out.write(word + '\n')
 
 	# output to screen
+	unique_words_amount = unique_words.size()
+	unknown_words_amount = unknown_words.size()
 	unknown_words_procent = (unknown_words_amount * 100) / unique_words_amount
 
 	os.system("clear")
@@ -141,4 +164,4 @@ elif choice == 2:
 	print("Unknown words:\t{}/{:.2f}%".format(unknown_words_amount, unknown_words_procent))
 else:
 	os.system("clear")
-	print("Your vocabulary is {} words".format(vocabulary_amount()))
+	print("Your vocabulary is {} words".format(vocabulary.size()))
