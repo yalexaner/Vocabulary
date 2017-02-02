@@ -86,7 +86,7 @@ class MyList(list):
 
 os.system("clear")
 
-vocabulary = MyList("vocabulary.txt")
+vocabulary = MyList("Data/vocabulary.txt")
 
 choice = int(input("Add words - 1\n" \
 				   "Get words - 2\n" \
@@ -102,7 +102,7 @@ if choice == 1:
 			vocabulary.add(word.strip())
 
 	# output in file
-	with open("vocabulary.txt", 'w') as out:
+	with open("Data/vocabulary.txt", 'w') as out:
 		for word in vocabulary:
 			out.write(word + '\n')
 

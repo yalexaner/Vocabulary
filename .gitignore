@@ -1,4 +1,3 @@
 *.txt
-words
-test.py
 .idea/
+!Data
