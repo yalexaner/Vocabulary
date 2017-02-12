@@ -1,15 +1,11 @@
 import os # path.exists() and system()
 
 class MyList(list):
-
-	def __init__(self, path = '0'):
-		if path == '0':
-			super(MyList, self).__init__()
-		else:
-			if os.path.exists(path):
-				with open(path) as file:
-					for word in file:
-						self.append(word.strip())
+	def read_words(self, path):
+		if os.path.exists(path):
+			with open(path) as file:
+				for word in file:
+					self.append(word.strip())
 
 	def size(self):
 		return len(self)
@@ -75,21 +71,50 @@ class MyList(list):
 				else:
 					return True
 
-			if word < self[start]:
-				return False
-			elif self[start] < word < self[end]:
-				return False
-			elif self[start] <= self[end] < word:
-				return False
-			else:
+			if word == self[start]:
 				return True
+			elif word == self[end]:
+				return True
+			else:
+				return False
+
+def delete_ending_ed(word):
+	global english_dictionary
+
+	if len(english_dictionary) == 0:
+		# english_dictionary.read_words("Data/English Words.txt")
+		english_dictionary.read_words("Data/less_words.txt")
+
+	if len(word) < 4:
+		return word
+
+	if word[-3] == 'i':
+		word = word[:-3] + 'y'
+	elif word[-3] == word[-4]:
+		word = word[:-3]
+	elif word[-3:-1] == 'ee':
+		word = word[:-1]
+	else:
+		word = word[:-2]
+
+		if not english_dictionary.word_in(word):
+			word = word + 'e'
+
+	return word
+
+def delete_ending_s(word):
+	pass
+
+def delete_ending_ing(word):
+	pass
 
 os.system("clear")
 
-vocabulary = MyList("Data/vocabulary.txt")
+vocabulary = MyList()
+vocabulary.read_words("Data/vocabulary.txt")
 
-choice = int(input("Add words - 1\n" \
-				   "Get words - 2\n" \
+choice = int(input("Add words in vocabulary - 1\n" \
+				   "Get unknown words - 2\n" \
 				   "Get number of words in the vocabulary - 3\n"))
 
 # refilling vocabulary
@@ -113,6 +138,7 @@ elif choice == 2:
 	output_path = str(input("Write file-output path and name: "))
 
 	unique_words = MyList()
+	english_dictionary = MyList()
 
 	total_words_amount = 0
 
@@ -123,8 +149,17 @@ elif choice == 2:
 				if not word.isalpha():
 					correct_word = ''
 
-					for symbol in word:
+					for i, symbol in enumerate(word):
 						if symbol == '\'':
+							if i != 0 and word[i - 1] == 'n':
+								if word == "won't":
+									correct_word = 'will'
+								elif word == "shan't":
+									correct_word = 'shall'
+								elif word == "can't":
+									correct_word = 'can'
+								else:
+									correct_word = correct_word[:-1]
 							break
 
 						if symbol.isalpha():
@@ -136,6 +171,15 @@ elif choice == 2:
 					word = word.lower()
 
 				if len(word) != 0:
+					if word[-2:] == 'ed':
+						word = delete_ending_ed(word)
+					elif word[-1] == 's':
+						# word = delete_ending_s(word)
+						pass
+					elif word[-3:] == 'ing':
+						# word = delete_ending_ing(word)
+						pass
+
 					total_words_amount += 1
 
 					unique_words.add(word)
