@@ -139,18 +139,41 @@ def delete_ending_s(word):
 		english_dictionary.read_words("Data/English Words.txt")
 		# english_dictionary.read_words("Data/less_words.txt")
 
-os.system("clear")
-
 vocabulary = MyList()
 vocabulary.read_words("Data/vocabulary.txt")
 
-choice = int(input("Add words in vocabulary - 1\n" \
-				   "Get unknown words - 2\n" \
-				   "Get number of words in the vocabulary - 3\n"))
+os.system("clear")
+
+while True:
+	try:
+		choice = int(input("Add words in vocabulary - 1\n" \
+						   "Get unknown words - 2\n" \
+						   "Get number of words in the vocabulary - 3\n"))
+	except ValueError:
+		os.system("clear")
+
+		print("Wrong symbol(s)! Try again.", end='\n\n')
+	else:
+		if 0 < choice < 4:
+			break
+		else:
+			os.system("clear")
+
+			print("Wrong number! Try again.", end='\n\n')
 
 # refilling vocabulary
 if choice == 1:
+	os.system("clear")
+
 	path = str(input("Write file path and name: "))
+
+	while True:
+		if not os.path.exists(path):
+			os.system("clear")
+
+			path = str(input("The file does not exist!\nTry again: "))
+		else:
+			break
 
 	# adding words
 	with open(path) as file:
@@ -162,7 +185,10 @@ if choice == 1:
 		for word in vocabulary:
 			out.write(word + '\n')
 
+	# output on screen
 	os.system("clear")
+
+	print("Adding words in your vocabulary has Done.")
 # working with unknown words
 elif choice == 2:
 	path = str(input("Write file path and name: "))
