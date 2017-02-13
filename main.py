@@ -60,53 +60,84 @@ class MyList(list):
 
 		if end == -1:
 			return False
-		else:
-			while end - start > 1:
-				if word < self[mid]:
-					end = mid - 1
-					mid = (mid - start) // 2 + start
-				elif word > self[mid]:
-					start = mid + 1
-					mid = (end - mid) // 2 + mid
-				else:
-					return True
 
-			if word == self[start]:
-				return True
-			elif word == self[end]:
-				return True
+		while end - start > 1:
+			if word < self[mid]:
+				end = mid - 1
+				mid = (mid - start) // 2 + start
+			elif word > self[mid]:
+				start = mid + 1
+				mid = (end - mid) // 2 + mid
 			else:
-				return False
+				return True
+
+		if word == self[start]:
+			return True
+		elif word == self[end]:
+			return True
+		else:
+			return False
 
 def delete_ending_ed(word):
 	global english_dictionary
 
 	if len(english_dictionary) == 0:
-		# english_dictionary.read_words("Data/English Words.txt")
-		english_dictionary.read_words("Data/less_words.txt")
+		english_dictionary.read_words("Data/English Words.txt")
+		# english_dictionary.read_words("Data/less_words.txt")
 
 	if len(word) < 4:
 		return word
 
 	if word[-3] == 'i':
-		word = word[:-3] + 'y'
+		return word[:-3] + 'y'
 	elif word[-3] == word[-4]:
-		word = word[:-3]
+		return word[:-3]
 	elif word[-3:-1] == 'ee':
-		word = word[:-1]
+		return word[:-1]
+
+	word = word[:-2]
+
+	if not english_dictionary.word_in(word):
+		return word + 'e'
 	else:
-		word = word[:-2]
-
-		if not english_dictionary.word_in(word):
-			word = word + 'e'
-
-	return word
-
-def delete_ending_s(word):
-	pass
+		return word
 
 def delete_ending_ing(word):
-	pass
+	global english_dictionary
+
+	if len(english_dictionary) == 0:
+		english_dictionary.read_words("Data/English Words.txt")
+		# english_dictionary.read_words("Data/less_words.txt")
+
+	if word[-5] == word[-4]:
+		word = word[:-3]
+
+		if not english_dictionary.word_in(word):
+			return word[:-1]
+		else:
+			return word
+
+	# exceptions
+	if word == "lying":
+		return "lie"
+	elif word == "dying":
+		return "die"
+	elif word == "tying":
+		return "tie"
+
+	word = word[:-3] + 'e'
+
+	if not english_dictionary.word_in(word):
+		return word[:-1]
+	else:
+		return word
+
+def delete_ending_s(word):
+	global english_dictionary
+
+	if len(english_dictionary) == 0:
+		english_dictionary.read_words("Data/English Words.txt")
+		# english_dictionary.read_words("Data/less_words.txt")
 
 os.system("clear")
 
@@ -177,8 +208,7 @@ elif choice == 2:
 						# word = delete_ending_s(word)
 						pass
 					elif word[-3:] == 'ing':
-						# word = delete_ending_ing(word)
-						pass
+						word = delete_ending_ing(word)
 
 					total_words_amount += 1
 
