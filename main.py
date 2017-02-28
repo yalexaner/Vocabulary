@@ -11,55 +11,18 @@ class MyList(list):
 		return len(self)
 
 	def add(self, word):
-		word_in = False
-		index = 0
+		index, word_in = self.word_in(word, withIndex=True)
 
-		# check is word in
-		start = 0
-		end = len(self) - 1
-		mid = end // 2
-
-		if end == -1:
-			word_in = False
-			index = -1
-		else:
-			while end - start > 1:
-				if word < self[mid]:
-					end = mid - 1
-					mid = (mid - start) // 2 + start
-				elif word > self[mid]:
-					start = mid + 1
-					mid = (end - mid) // 2 + mid
-				else:
-					word_in = True
-					index = -1
-					break
-
-			if not word_in:
-				if word < self[start]:
-					word_in = False
-					index = start
-				elif self[start] < word < self[end]:
-					word_in = False
-					index = end
-				elif self[start] <= self[end] < word:
-					word_in = False
-					index = end + 1
-				else:
-					word_in = True
-					index = -1
-
-		# adding word
 		if not word_in:
 			self.insert(index, word)
 
-	def word_in(self, word):
+	def word_in(self, word, withIndex=False):
 		start = 0
 		end = len(self) - 1
 		mid = end // 2
 
 		if end == -1:
-			return False
+			return (0, False) if withIndex else False
 
 		while end - start > 1:
 			if word < self[mid]:
@@ -69,75 +32,75 @@ class MyList(list):
 				start = mid + 1
 				mid = (end - mid) // 2 + mid
 			else:
-				return True
+				return (-1, True) if withIndex else True
 
-		if word == self[start]:
-			return True
-		elif word == self[end]:
-			return True
-		else:
-			return False
+		if word < self[start]:
+			return (start, False) if withIndex else False
+
+		if self[start] < word < self[end]:
+			return (end, False) if withIndex else False
+
+		if self[start] <= self[end] < word:
+			return (end + 1, False) if withIndex else False
+
+		return (-1, True) if withIndex else True
 
 def delete_ending_ed(word):
 	global english_dictionary
 
-	if len(english_dictionary) == 0:
-		english_dictionary.read_words("Data/English Words.txt")
-		# english_dictionary.read_words("Data/less_words.txt")
-
 	if len(word) < 4:
 		return word
 
-	if word[-3] == 'i':
-		return word[:-3] + 'y'
-	elif word[-3] == word[-4]:
-		return word[:-3]
-	elif word[-3:-1] == 'ee':
+	if word.endswith('eed'):
 		return word[:-1]
 
-	word = word[:-2]
+	if word.endswith('ied'):
+		return word[:-3] + 'y'
 
-	if not english_dictionary.word_in(word):
-		return word + 'e'
-	else:
-		return word
+	if word[-4] == word[-3]:
+		return word[:-3] if english_dictionary.word_in(word[:-3]) else word[:-2]
+
+	if english_dictionary.word_in(word[:-1]):
+		return word[:-1]
+
+	return word[:-2] if english_dictionary.word_in(word[:-2]) else word
 
 def delete_ending_ing(word):
 	global english_dictionary
 
-	if len(english_dictionary) == 0:
-		english_dictionary.read_words("Data/English Words.txt")
-		# english_dictionary.read_words("Data/less_words.txt")
+	# exceptions
+	if word in ["lying", "dying", "tying"]:
+		return word[1] + 'ie'
 
 	if word[-5] == word[-4]:
-		word = word[:-3]
+		return word[:-4] if english_dictionary.word_in(word[:-4]) else word[:-3]
 
-		if not english_dictionary.word_in(word):
-			return word[:-1]
-		else:
-			return word
+	if word.endswith('ying'):
+		return word[:-3]
 
-	# exceptions
-	if word == "lying":
-		return "lie"
-	elif word == "dying":
-		return "die"
-	elif word == "tying":
-		return "tie"
+	if english_dictionary.word_in(word[:-3] + 'e'):
+		return word[:-3] + 'e'
 
-	word = word[:-3] + 'e'
-
-	if not english_dictionary.word_in(word):
-		return word[:-1]
-	else:
-		return word
+	return word[:-3] if english_dictionary.word_in(word[:-3]) else word
 
 def delete_ending_s(word):
 	global english_dictionary
 
-	if len(english_dictionary) == 0:
-		english_dictionary.read_words("Data/English Words.txt")
-		# english_dictionary.read_words("Data/less_words.txt")
+	if word.endswith('ss') or len(word) < 3:
+		return word
+
+	# word ends with -es
+	if word.endswith('ves'):
+		return word[:-3] + 'f' if english_dictionary.word_in(word[:-3] + 'f') else word[:-3] + 'fe'
+
+	if word.endswith('ies'):
+		return word[:-3] + 'y'
+
+	if word.endswith(('oes', 'shes', 'ches', 'xes', 'sses', 'tches')):
+		return word[:-2]
+
+	# word ends with -s
+	return word[:-1] if english_dictionary.word_in(word[:-1]) else word
 
 vocabulary = MyList()
 vocabulary.read_words("Data/vocabulary.txt")
@@ -146,9 +109,10 @@ os.system("clear")
 
 while True:
 	try:
-		choice = int(input("Add words in vocabulary - 1\n" \
-						   "Get unknown words - 2\n" \
-						   "Get number of words in the vocabulary - 3\n"))
+		choice = int(input("Add words in vocabulary - 1\n"\
+						   "Get unknown words - 2\n"\
+						   "Get number of words in the vocabulary - 3\n"\
+						   '> '))
 	except ValueError:
 		os.system("clear")
 
@@ -167,13 +131,9 @@ if choice == 1:
 
 	path = str(input("Write file path and name: "))
 
-	while True:
-		if not os.path.exists(path):
-			os.system("clear")
-
-			path = str(input("The file does not exist!\nTry again: "))
-		else:
-			break
+	while not os.path.exists(path):
+		os.system("clear")
+		path = str(input("The file does not exist!\nTry again: "))
 
 	# adding words
 	with open(path) as file:
@@ -186,66 +146,74 @@ if choice == 1:
 			out.write(word + '\n')
 
 	# output on screen
-	os.system("clear")
-
-	print("Adding words in your vocabulary has Done.")
+	print("\nAdding words in your vocabulary has Done.")
 # working with unknown words
 elif choice == 2:
+	os.system("clear")
+
 	path = str(input("Write file path and name: "))
 	output_path = str(input("Write file-output path and name: "))
 
-	unique_words = MyList()
 	english_dictionary = MyList()
+	# english_dictionary.read_words("Data/English Words.txt")
+	english_dictionary.read_words("Data/less_words.txt")
 
+	unique_words = MyList()
 	total_words_amount = 0
 
 	# read and getting unique words
 	with open(path) as file:
 		for line in file:
 			for word in line.split():
+				# short reductions
+				if word.endswith("n't"):
+					# exceptions
+					if word == "won't":
+						word = 'will'
+					elif word == "shan't":
+						word = 'shall'
+					elif word == "can't":
+						word = 'can'
+					# other words
+					else:
+						word = word[:-3]
+				elif word.endswith(("'s", "'d", "'m", "'ve", "'ll", "'re")):
+					correct_word = word.split('\'')[0]
+
 				if not word.isalpha():
 					correct_word = ''
 
-					for i, symbol in enumerate(word):
-						if symbol == '\'':
-							if i != 0 and word[i - 1] == 'n':
-								if word == "won't":
-									correct_word = 'will'
-								elif word == "shan't":
-									correct_word = 'shall'
-								elif word == "can't":
-									correct_word = 'can'
-								else:
-									correct_word = correct_word[:-1]
-							break
-
+					for symbol in word:
 						if symbol.isalpha():
 							correct_word += symbol
 
 					word = correct_word
 
-				if (word.istitle() or word.isupper()) and len(word) > 1:
+				if (word.istitle() or word.isupper()) and word != 'I':
 					word = word.lower()
 
 				if len(word) != 0:
-					if word[-2:] == 'ed':
+					if word.endswith('ed'):
+						# word += ' - ' + delete_ending_ed(word)
 						word = delete_ending_ed(word)
-					elif word[-1] == 's':
-						# word = delete_ending_s(word)
-						pass
-					elif word[-3:] == 'ing':
+					elif word.endswith('s'):
+						# word += ' - ' + delete_ending_s(word)
+						word = delete_ending_s(word)
+					elif word.endswith('ing'):
+						# word += ' - ' + delete_ending_ing(word)
 						word = delete_ending_ing(word)
 
-					total_words_amount += 1
-
-					unique_words.add(word)
+				total_words_amount += 1
+				unique_words.add(word)
 
 	# getting unknown words
-	unknown_words = MyList()
+	unknown_words = MyList(list(filter(lambda word: not vocabulary.word_in(word), unique_words)))
 
+	'''
 	for word in unique_words:
 		if not vocabulary.word_in(word):
 			unknown_words.add(word)
+	'''
 
 	# output in file
 	with open(output_path, 'w') as out:
