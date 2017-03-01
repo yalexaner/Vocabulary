@@ -165,6 +165,20 @@ elif choice == 2:
 	with open(path) as file:
 		for line in file:
 			for word in line.split():
+				# deleting non-alpha symbols on both sides
+				# deleting non-alpha symbols on the left side
+				if not word[0].isalpha():
+					for i, symbol in enumerate(word):
+						if symbol.isalpha():
+							word = word[i:]
+							break
+				# deleting non-alpha symbols on the right side
+				if not word[-1].isalpha():
+					for i, symbol in enumerate(word[::-1]):
+						if symbol.isalpha():
+							word = word[:i * -1]
+							break
+
 				# short reductions
 				if word.endswith("n't"):
 					# exceptions
@@ -178,8 +192,9 @@ elif choice == 2:
 					else:
 						word = word[:-3]
 				elif word.endswith(("'s", "'d", "'m", "'ve", "'ll", "'re")):
-					correct_word = word.split('\'')[0]
+					word = word.split('\'')[0]
 
+				# deleting left non-alpha symbols
 				if not word.isalpha():
 					correct_word = ''
 
@@ -203,17 +218,10 @@ elif choice == 2:
 						# word += ' - ' + delete_ending_ing(word)
 						word = delete_ending_ing(word)
 
-				total_words_amount += 1
-				unique_words.add(word)
+					total_words_amount += 1
+					unique_words.add(word)
 
-	# getting unknown words
 	unknown_words = MyList(list(filter(lambda word: not vocabulary.word_in(word), unique_words)))
-
-	'''
-	for word in unique_words:
-		if not vocabulary.word_in(word):
-			unknown_words.add(word)
-	'''
 
 	# output in file
 	with open(output_path, 'w') as out:
@@ -223,13 +231,13 @@ elif choice == 2:
 	# output to screen
 	unique_words_amount = unique_words.size()
 	unknown_words_amount = unknown_words.size()
-	unknown_words_procent = (unknown_words_amount * 100) / unique_words_amount
+	unknown_words_percent = (unknown_words_amount * 100) / unique_words_amount
 
 	os.system("clear")
 
 	print("Total words:\t{}".format(total_words_amount))
 	print("Unique words:\t{}".format(unique_words_amount))
-	print("Unknown words:\t{}/{:.2f}%".format(unknown_words_amount, unknown_words_procent))
+	print("Unknown words:\t{}/{:.2f}%".format(unknown_words_amount, unknown_words_percent))
 else:
 	os.system("clear")
 	print("Your vocabulary is {} words".format(vocabulary.size()))
