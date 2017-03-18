@@ -1,4 +1,5 @@
 import os # path.exists() and system()
+import re
 
 class MyList(list):
 	def read_words(self, path):
@@ -48,40 +49,46 @@ class MyList(list):
 def delete_ending_ed(word):
 	global english_dictionary
 
-	if len(word) < 4:
+	try:
+		if word.endswith('eed'):
+			return word[:-1]
+
+		if word.endswith('ied'):
+			return word[:-3] + 'y'
+
+		if word[-4] == word[-3]:
+			return word[:-3] if english_dictionary.word_in(word[:-3]) else word[:-2]
+
+		if english_dictionary.word_in(word[:-1]):
+			return word[:-1]
+
+		return word[:-2] if english_dictionary.word_in(word[:-2]) else word
+	except IndexError:
 		return word
-
-	if word.endswith('eed'):
-		return word[:-1]
-
-	if word.endswith('ied'):
-		return word[:-3] + 'y'
-
-	if word[-4] == word[-3]:
-		return word[:-3] if english_dictionary.word_in(word[:-3]) else word[:-2]
-
-	if english_dictionary.word_in(word[:-1]):
-		return word[:-1]
-
-	return word[:-2] if english_dictionary.word_in(word[:-2]) else word
 
 def delete_ending_ing(word):
 	global english_dictionary
 
-	# exceptions
-	if word in ["lying", "dying", "tying"]:
-		return word[1] + 'ie'
+	if len(word) < 5:
+		return word
 
-	if word[-5] == word[-4]:
-		return word[:-4] if english_dictionary.word_in(word[:-4]) else word[:-3]
+	try:
+		# exceptions
+		if word in ["lying", "dying", "tying"]:
+			return word[0] + 'ie'
 
-	if word.endswith('ying'):
-		return word[:-3]
+		if word[-5] == word[-4]:
+			return word[:-4] if english_dictionary.word_in(word[:-4]) else word[:-3]
 
-	if english_dictionary.word_in(word[:-3] + 'e'):
-		return word[:-3] + 'e'
+		if word.endswith('ying'):
+			return word[:-3]
 
-	return word[:-3] if english_dictionary.word_in(word[:-3]) else word
+		if english_dictionary.word_in(word[:-3] + 'e'):
+			return word[:-3] + 'e'
+
+		return word[:-3] if english_dictionary.word_in(word[:-3]) else word
+	except IndexError:
+		return word
 
 def delete_ending_s(word):
 	global english_dictionary
@@ -151,8 +158,8 @@ if choice == 1:
 elif choice == 2:
 	os.system("clear")
 
-	path = str(input("Write file path and name: "))
-	output_path = str(input("Write file-output path and name: "))
+	path = input("Write file path and name: ")
+	output_path = input("Write file-output path and name: ")
 
 	english_dictionary = MyList()
 	# english_dictionary.read_words("Data/English Words.txt")
@@ -163,63 +170,41 @@ elif choice == 2:
 
 	# read and getting unique words
 	with open(path) as file:
-		for line in file:
-			for word in line.split():
-				# deleting non-alpha symbols on both sides
-				# deleting non-alpha symbols on the left side
-				if not word[0].isalpha():
-					for i, symbol in enumerate(word):
-						if symbol.isalpha():
-							word = word[i:]
-							break
-				# deleting non-alpha symbols on the right side
-				if not word[-1].isalpha():
-					for i, symbol in enumerate(word[::-1]):
-						if symbol.isalpha():
-							word = word[:i * -1]
-							break
+		words = re.findall(r"\w+'?\w+", file.read())
 
-				# short reductions
-				if word.endswith("n't"):
-					# exceptions
-					if word == "won't":
-						word = 'will'
-					elif word == "shan't":
-						word = 'shall'
-					elif word == "can't":
-						word = 'can'
-					# other words
-					else:
-						word = word[:-3]
-				elif word.endswith(("'s", "'d", "'m", "'ve", "'ll", "'re")):
-					word = word.split('\'')[0]
+		for word in words:
+			# short reductions
+			if word.endswith("n't"):
+				# exceptions
+				if word == "won't":
+					word = 'will'
+				elif word == "shan't":
+					word = 'shall'
+				elif word == "can't":
+					word = 'can'
+				# other words
+				else:
+					word = word[:-3]
+			elif word.endswith(("'s", "'d", "'m", "'ve", "'ll", "'re")):
+				word = word.split('\'')[0]
 
-				# deleting left non-alpha symbols
-				if not word.isalpha():
-					correct_word = ''
+			if (word.istitle() or word.isupper()) and word != 'I':
+				word = word.lower()
 
-					for symbol in word:
-						if symbol.isalpha():
-							correct_word += symbol
+			if len(word) != 0:
+				if word.endswith('ed'):
+					# word += ' - ' + delete_ending_ed(word)
+					word = delete_ending_ed(word)
+				elif word.endswith('s'):
+					# word += ' - ' + delete_ending_s(word)
+					word = delete_ending_s(word)
+				elif word.endswith('ing'):
+					# word += ' - ' + delete_ending_ing(word)
+					word = delete_ending_ing(word)
 
-					word = correct_word
-
-				if (word.istitle() or word.isupper()) and word != 'I':
-					word = word.lower()
-
-				if len(word) != 0:
-					if word.endswith('ed'):
-						# word += ' - ' + delete_ending_ed(word)
-						word = delete_ending_ed(word)
-					elif word.endswith('s'):
-						# word += ' - ' + delete_ending_s(word)
-						word = delete_ending_s(word)
-					elif word.endswith('ing'):
-						# word += ' - ' + delete_ending_ing(word)
-						word = delete_ending_ing(word)
-
-					total_words_amount += 1
-					unique_words.add(word)
+			if english_dictionary.word_in(word):
+				total_words_amount += 1
+				unique_words.add(word)
 
 	unknown_words = MyList(list(filter(lambda word: not vocabulary.word_in(word), unique_words)))
 
