@@ -1,5 +1,6 @@
 import os # path.exists() and system()
 import re
+import requests
 
 class MyList(list):
 	def read_words(self, path):
@@ -45,6 +46,20 @@ class MyList(list):
 			return (end + 1, False) if withIndex else False
 
 		return (-1, True) if withIndex else True
+
+def translate(*words):
+	data = {
+		'host': 'translate.yandex.net/api/v1.5/tr.json/translate',
+		'key' : 'trnsl.1.1.20170320T072207Z.bb627ea51edfe867.c14fb5bbd2f209736f566bf2283834de3f3ee098',
+		'lang': 'en-ru'
+	}
+
+	link = 'https://{host}?key={key}&lang={lang}&text='.format(**data) + '&text='.join(words)
+
+	res = requests.get(link).json()
+
+	for word in res['text']:
+		yield word
 
 def delete_ending_ed(word):
 	global english_dictionary
@@ -158,11 +173,14 @@ if choice == 1:
 elif choice == 2:
 	os.system("clear")
 
+	withTranslation = True if input('Translate words? [y/n]\n> ') == 'y' else False
+
+	os.system("clear")
+
 	path = input("Write file path and name: ")
 	output_path = input("Write file-output path and name: ")
 
 	english_dictionary = MyList()
-	# english_dictionary.read_words("Data/English Words.txt")
 	english_dictionary.read_words("Data/less_words.txt")
 
 	unique_words = MyList()
@@ -170,7 +188,7 @@ elif choice == 2:
 
 	# read and getting unique words
 	with open(path) as file:
-		words = re.findall(r"\w+'?\w+", file.read())
+		words = re.findall(r"\b\w+'?\w*\b", file.read())
 
 		for word in words:
 			# short reductions
@@ -206,7 +224,11 @@ elif choice == 2:
 				total_words_amount += 1
 				unique_words.add(word)
 
-	unknown_words = MyList(list(filter(lambda word: not vocabulary.word_in(word), unique_words)))
+	unknown_words = MyList(filter( lambda word: not vocabulary.word_in(word), unique_words ))
+
+	if withTranslation:
+		unknown_words = zip( unknown_words, translate(*unknown_words) )
+		unknown_words = MyList(map( lambda words: ' - '.join(words), unknown_words ))
 
 	# output in file
 	with open(output_path, 'w') as out:
