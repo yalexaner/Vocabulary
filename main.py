@@ -2,6 +2,8 @@ from os import system
 from os.path import exists
 import re
 import requests
+import pysrt
+
 from mylist import MyList
 from config import translate_key
 
@@ -134,7 +136,7 @@ elif choice == 2:
 
 	system("clear")
 
-	path = input("Write file path: ")
+	path = input("Write file path (.srt only): ")
 	output_path = input("Write file-output path: ")	
 
 	english_dictionary = MyList()
@@ -146,41 +148,43 @@ elif choice == 2:
 	# reading and getting unique words
 	words = []
 
-	with open(path) as file:
-		for line in file:
-			words += re.findall(r"\b[a-zA-Z]+(?:'\w+)?\b", line)
-		# words = re.findall(r"\b\w+'?\w*\b", file.read())
+	# with open(path) as file:
+	file = pysrt.open(path)
 
-		for word in words:
-			# short reductions
-			if word.endswith("n't"):
-				# exceptions
-				if word == "won't":
-					word = 'will'
-				elif word == "shan't":
-					word = 'shall'
-				elif word == "can't":
-					word = 'can'
-				# other words
-				else:
-					word = word[:-3]
-			elif word.endswith(("'s", "'d", "'m", "'ve", "'ll", "'re")):
-				word, *_ = word.split('\'')
+	for sub in file:
+		words += re.findall(r"\b[a-zA-Z]+(?:'\w+)?\b", sub.text)
+	# words = re.findall(r"\b\w+'?\w*\b", file.read())
 
-			if (word.istitle() or word.isupper()) and word != 'I':
-				word = word.lower()
+	for word in words:
+		# short reductions
+		if word.endswith("n't"):
+			# exceptions
+			if word == "won't":
+				word = 'will'
+			elif word == "shan't":
+				word = 'shall'
+			elif word == "can't":
+				word = 'can'
+			# other words
+			else:
+				word = word[:-3]
+		elif word.endswith(("'s", "'d", "'m", "'ve", "'ll", "'re")):
+			word, *_ = word.split('\'')
 
-			if len(word) != 0:
-				if word.endswith('ed'):
-					word = delete_ending_ed(word)
-				elif word.endswith('s'):
-					word = delete_ending_s(word)
-				elif word.endswith('ing'):
-					word = delete_ending_ing(word)
+		if (word.istitle() or word.isupper()) and word != 'I':
+			word = word.lower()
 
-			if english_dictionary.word_in(word):
-				total_words_amount += 1
-				unique_words.add(word)
+		if len(word) != 0:
+			if word.endswith('ed'):
+				word = delete_ending_ed(word)
+			elif word.endswith('s'):
+				word = delete_ending_s(word)
+			elif word.endswith('ing'):
+				word = delete_ending_ing(word)
+
+		if english_dictionary.word_in(word):
+			total_words_amount += 1
+			unique_words.add(word)
 
 	unknown_words = MyList(filter(lambda word: not vocabulary.word_in(word), unique_words))
 
