@@ -1,69 +1,27 @@
-import os # path.exists() and system()
+from os import system
+from os.path import exists
 import re
 import requests
+from mylist import MyList
+from config import translate_key
 
-class MyList(list):
-	def read_words(self, path):
-		if os.path.exists(path):
-			with open(path) as file:
-				for word in file:
-					self.append(word.strip())
-
-	def size(self):
-		return len(self)
-
-	def add(self, word):
-		index, word_in = self.word_in(word, withIndex=True)
-
-		if not word_in:
-			self.insert(index, word)
-
-	def word_in(self, word, withIndex=False):
-		start = 0
-		end = len(self) - 1
-		mid = end // 2
-
-		if end == -1:
-			return (0, False) if withIndex else False
-
-		while end - start > 1:
-			if word < self[mid]:
-				end = mid - 1
-				mid = (mid - start) // 2 + start
-			elif word > self[mid]:
-				start = mid + 1
-				mid = (end - mid) // 2 + mid
-			else:
-				return (-1, True) if withIndex else True
-
-		if word < self[start]:
-			return (start, False) if withIndex else False
-
-		if self[start] < word < self[end]:
-			return (end, False) if withIndex else False
-
-		if self[start] <= self[end] < word:
-			return (end + 1, False) if withIndex else False
-
-		return (-1, True) if withIndex else True
 
 def translate(*words):
 	data = {
 		'host': 'translate.yandex.net/api/v1.5/tr.json/translate',
-		'key' : 'trnsl.1.1.20170320T072207Z.bb627ea51edfe867.c14fb5bbd2f209736f566bf2283834de3f3ee098',
+		'key': translate_key,
 		'lang': 'en-ru'
 	}
 
-	link = 'https://{host}?key={key}&lang={lang}&text='.format(**data) + '&text='.join(words)
+	url = 'https://{host}?key={key}&lang={lang}&text='.format(**data) + '&text='.join(words)
 
-	res = requests.get(link).json()
+	res = requests.get(url).json()
 
 	for word in res['text']:
 		yield word
 
-def delete_ending_ed(word):
-	global english_dictionary
 
+def delete_ending_ed(word):
 	try:
 		if word.endswith('eed'):
 			return word[:-1]
@@ -81,9 +39,8 @@ def delete_ending_ed(word):
 	except IndexError:
 		return word
 
-def delete_ending_ing(word):
-	global english_dictionary
 
+def delete_ending_ing(word):
 	if len(word) < 5:
 		return word
 
@@ -105,9 +62,8 @@ def delete_ending_ing(word):
 	except IndexError:
 		return word
 
-def delete_ending_s(word):
-	global english_dictionary
 
+def delete_ending_s(word):
 	if word.endswith('ss') or len(word) < 3:
 		return word
 
@@ -124,38 +80,39 @@ def delete_ending_s(word):
 	# word ends with -s
 	return word[:-1] if english_dictionary.word_in(word[:-1]) else word
 
+
 vocabulary = MyList()
 vocabulary.read_words("Data/vocabulary.txt")
 
-os.system("clear")
+system("clear")
 
 while True:
 	try:
-		choice = int(input("Add words in vocabulary - 1\n"\
-						   "Get unknown words - 2\n"\
-						   "Get number of words in the vocabulary - 3\n"\
-						   '> '))
+		choice = int(input("Add words in vocabulary - 1\n"
+		                   "Get unknown words - 2\n"
+		                   "Get number of words in the vocabulary - 3\n"
+		                   '> '))
 	except ValueError:
-		os.system("clear")
+		system("clear")
 
 		print("Wrong symbol(s)! Try again.", end='\n\n')
 	else:
 		if 0 < choice < 4:
 			break
 		else:
-			os.system("clear")
+			system("clear")
 
 			print("Wrong number! Try again.", end='\n\n')
 
 # refilling vocabulary
 if choice == 1:
-	os.system("clear")
+	system("clear")
 
-	path = str(input("Write file path and name: "))
+	path = str(input("Write file path: "))
 
-	while not os.path.exists(path):
-		os.system("clear")
-		path = str(input("The file does not exist!\nTry again: "))
+	while not exists(path):
+		system("clear")
+		path = str(input("The file does not exist!\nTry another path: "))
 
 	# adding words
 	with open(path) as file:
@@ -171,14 +128,14 @@ if choice == 1:
 	print("\nAdding words in your vocabulary has Done.")
 # working with unknown words
 elif choice == 2:
-	os.system("clear")
+	system("clear")
 
 	withTranslation = True if input('Translate words? [y/n]\n> ') == 'y' else False
 
-	os.system("clear")
+	system("clear")
 
-	path = input("Write file path and name: ")
-	output_path = input("Write file-output path and name: ")
+	path = input("Write file path: ")
+	output_path = input("Write file-output path: ")	
 
 	english_dictionary = MyList()
 	english_dictionary.read_words("Data/less_words.txt")
@@ -186,9 +143,13 @@ elif choice == 2:
 	unique_words = MyList()
 	total_words_amount = 0
 
-	# read and getting unique words
+	# reading and getting unique words
+	words = []
+
 	with open(path) as file:
-		words = re.findall(r"\b\w+'?\w*\b", file.read())
+		for line in file:
+			words += re.findall(r"\b[a-zA-Z]+(?:'\w+)?\b", line)
+		# words = re.findall(r"\b\w+'?\w*\b", file.read())
 
 		for word in words:
 			# short reductions
@@ -204,31 +165,28 @@ elif choice == 2:
 				else:
 					word = word[:-3]
 			elif word.endswith(("'s", "'d", "'m", "'ve", "'ll", "'re")):
-				word = word.split('\'')[0]
+				word, *_ = word.split('\'')
 
 			if (word.istitle() or word.isupper()) and word != 'I':
 				word = word.lower()
 
 			if len(word) != 0:
 				if word.endswith('ed'):
-					# word += ' - ' + delete_ending_ed(word)
 					word = delete_ending_ed(word)
 				elif word.endswith('s'):
-					# word += ' - ' + delete_ending_s(word)
 					word = delete_ending_s(word)
 				elif word.endswith('ing'):
-					# word += ' - ' + delete_ending_ing(word)
 					word = delete_ending_ing(word)
 
 			if english_dictionary.word_in(word):
 				total_words_amount += 1
 				unique_words.add(word)
 
-	unknown_words = MyList(filter( lambda word: not vocabulary.word_in(word), unique_words ))
+	unknown_words = MyList(filter(lambda word: not vocabulary.word_in(word), unique_words))
 
 	if withTranslation:
-		unknown_words = zip( unknown_words, translate(*unknown_words) )
-		unknown_words = MyList(map( lambda words: ' - '.join(words), unknown_words ))
+		unknown_words = zip(unknown_words, translate(*unknown_words))
+		unknown_words = MyList(map(lambda words: ' - '.join(words), unknown_words))
 
 	# output in file
 	with open(output_path, 'w') as out:
@@ -240,11 +198,11 @@ elif choice == 2:
 	unknown_words_amount = unknown_words.size()
 	unknown_words_percent = (unknown_words_amount * 100) / unique_words_amount
 
-	os.system("clear")
+	system("clear")
 
 	print("Total words:\t{}".format(total_words_amount))
 	print("Unique words:\t{}".format(unique_words_amount))
 	print("Unknown words:\t{}/{:.2f}%".format(unknown_words_amount, unknown_words_percent))
 else:
-	os.system("clear")
+	system("clear")
 	print("Your vocabulary is {} words".format(vocabulary.size()))
