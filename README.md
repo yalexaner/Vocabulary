@@ -1,4 +1,4 @@
-# Vocabulary
+# Words from subs
 
 ___English___
 
