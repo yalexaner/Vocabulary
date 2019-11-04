@@ -1,4 +1,12 @@
+# text files
 *.txt
-.idea/
-!Data
+*.srt
+!requirements.txt
+
+# python files
 config.py
+
+# folders
+.idea/
+__pycache__
+.vscode
