@@ -7,6 +7,9 @@ import pysrt
 from mylist import MyList
 from config import translate_key
 
+english_dictionary = MyList()
+english_dictionary.read_words('Data/less_words.txt')
+
 
 def translate(*words):
 	data = {
@@ -48,7 +51,7 @@ def delete_ending_ing(word):
 
 	try:
 		# exceptions
-		if word in ["lying", "dying", "tying"]:
+		if word in ['lying', 'dying', 'tying']:
 			return word[0] + 'ie'
 
 		if word[-5] == word[-4]:
@@ -83,38 +86,13 @@ def delete_ending_s(word):
 	return word[:-1] if english_dictionary.word_in(word[:-1]) else word
 
 
-vocabulary = MyList()
-vocabulary.read_words("Data/vocabulary.txt")
-
-system("clear")
-
-while True:
-	try:
-		choice = int(input("Add words in vocabulary - 1\n"
-		                   "Get unknown words - 2\n"
-		                   "Get number of words in the vocabulary - 3\n"
-		                   '> '))
-	except ValueError:
-		system("clear")
-
-		print("Wrong symbol(s)! Try again.", end='\n\n')
-	else:
-		if 0 < choice < 4:
-			break
-		else:
-			system("clear")
-
-			print("Wrong number! Try again.", end='\n\n')
-
-# refilling vocabulary
-if choice == 1:
-	system("clear")
-
-	path = str(input("Write file path: "))
+def add_words_to_vocab():
+	system('clear')
+	path = input('Your file with words: ')
 
 	while not exists(path):
-		system("clear")
-		path = str(input("The file does not exist!\nTry another path: "))
+		system('clear')
+		path = input('The file does not exist!. Try another one: ')
 
 	# adding words
 	with open(path) as file:
@@ -122,25 +100,24 @@ if choice == 1:
 			vocabulary.add(word.strip())
 
 	# output in file
-	with open("Data/vocabulary.txt", 'w') as out:
+	with open('Data/vocabulary.txt', 'w') as out:
 		for word in vocabulary:
 			out.write(word + '\n')
 
 	# output on screen
-	print("\nAdding words in your vocabulary has Done.")
-# working with unknown words
-elif choice == 2:
-	system("clear")
+	system('clear')
+	print('All words has been added to your vocabulary.')
 
-	withTranslation = True if input('Translate words? [y/n]\n> ') == 'y' else False
 
-	system("clear")
+def get_unknown_words():
+	system('clear')
+	path = input('File with subs (.srt only): ')
 
-	path = input("Write file path (.srt only): ")
-	output_path = input("Write file-output path: ")	
+	system('clear')
+	output_path = input('Where to put parsed words?: ')
 
-	english_dictionary = MyList()
-	english_dictionary.read_words("Data/less_words.txt")
+	system('clear')
+	to_be_translated = True if input('Translate words? [y/n]: ') == 'y' else False
 
 	unique_words = MyList()
 	total_words_amount = 0
@@ -148,12 +125,10 @@ elif choice == 2:
 	# reading and getting unique words
 	words = []
 
-	# with open(path) as file:
 	file = pysrt.open(path)
 
 	for sub in file:
 		words += re.findall(r"\b[a-zA-Z]+(?:'\w+)?\b", sub.text)
-	# words = re.findall(r"\b\w+'?\w*\b", file.read())
 
 	for word in words:
 		# short reductions
@@ -188,7 +163,7 @@ elif choice == 2:
 
 	unknown_words = MyList(filter(lambda word: not vocabulary.word_in(word), unique_words))
 
-	if withTranslation:
+	if to_be_translated:
 		unknown_words = zip(unknown_words, translate(*unknown_words))
 		unknown_words = MyList(map(lambda words: ' - '.join(words), unknown_words))
 
@@ -202,11 +177,42 @@ elif choice == 2:
 	unknown_words_amount = unknown_words.size()
 	unknown_words_percent = (unknown_words_amount * 100) / unique_words_amount
 
-	system("clear")
+	system('clear')
 
-	print("Total words:\t{}".format(total_words_amount))
-	print("Unique words:\t{}".format(unique_words_amount))
-	print("Unknown words:\t{}/{:.2f}%".format(unknown_words_amount, unknown_words_percent))
+	print('Total words:\t{}'.format(total_words_amount))
+	print('Unique words:\t{}'.format(unique_words_amount))
+	print('Unknown words:\t{}/{:.2f}%'.format(unknown_words_amount, unknown_words_percent))
+
+
+vocabulary = MyList()
+vocabulary.read_words('Data/vocabulary.txt')
+
+system('clear')
+
+while True:
+	try:
+		choice = int(input('Add words in vocabulary - 1\n'
+		                   'Get unknown words - 2\n'
+		                   'Get number of words in the vocabulary - 3\n'
+		                   '> '))
+	except ValueError:
+		system('clear')
+
+		print('Wrong symbol(s)! Try again.', end='\n\n')
+	else:
+		if 0 < choice < 4:
+			break
+		else:
+			system('clear')
+
+			print('Wrong number! Try again.', end='\n\n')
+
+if choice == 1:
+	add_words_to_vocab()
+	
+elif choice == 2:
+	get_unknown_words()
+	
 else:
-	system("clear")
-	print("Your vocabulary is {} words".format(vocabulary.size()))
+	system('clear')
+	print('You have {} {} in your vocabulary'.format(vocabulary.size(), 'word' if vocabulary.size == 1 else 'words'))
