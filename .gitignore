@@ -6,6 +6,14 @@
 # python files
 config.py
 
+# virtual environment
+bin
+lib
+lib64
+include
+share
+pyvenv.cfg
+
 # folders
 .idea/
 __pycache__
