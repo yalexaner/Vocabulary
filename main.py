@@ -3,6 +3,7 @@ from os.path import exists
 import re
 import requests
 import pysrt
+import click
 
 from mylist import MyList
 from config import translate_key
@@ -11,7 +12,7 @@ english_dictionary = MyList()
 english_dictionary.read_words('Data/less_words.txt')
 
 
-def translate(*words):
+def translate_words(*words):
 	data = {
 		'host': 'translate.yandex.net/api/v1.5/tr.json/translate',
 		'key': translate_key,
@@ -86,38 +87,51 @@ def delete_ending_s(word):
 	return word[:-1] if english_dictionary.word_in(word[:-1]) else word
 
 
-def add_words_to_vocab():
-	system('clear')
-	path = input('Your file with words: ')
-
-	while not exists(path):
-		system('clear')
-		path = input('The file does not exist!. Try another one: ')
-
-	# adding words
-	with open(path) as file:
-		for word in file:
-			vocabulary.add(word.strip())
-
-	# output in file
-	with open('Data/vocabulary.txt', 'w') as out:
-		for word in vocabulary:
-			out.write(word + '\n')
-
-	# output on screen
-	system('clear')
-	print('All words has been added to your vocabulary.')
+vocabulary = MyList()
+vocabulary.read_words('Data/vocabulary.txt')
 
 
-def get_unknown_words():
-	system('clear')
-	path = input('File with subs (.srt only): ')
+@click.group()
+@click.version_option()
+def cli():
+	"""words — extract words from English text
 
-	system('clear')
-	output_path = input('Where to put parsed words?: ')
+	This is a program that extracts all the English words that you don't know
+	from file you give. All the known words are stored in vocabulary.txt.
+	Currently supports .srt files only.
 
-	system('clear')
-	to_be_translated = True if input('Translate words? [y/n]: ') == 'y' else False
+	\b
+	Extract words:
+		words get sub.srt words.txt
+
+	\b
+	Extract words and translate them:
+		words get sub.srt words.txt --translate
+
+	\b
+	Add words to your vocabulary:
+		words vocab extend file-with-words.txt
+
+	\b
+	Get know your vocabulary:
+		words vocab size
+	"""
+	
+
+@cli.group()
+def vocab():
+	"""Manges your vocabulary."""
+
+
+@cli.command('get')
+@click.argument('input', type=click.Path(exists=True, readable=True,
+										allow_dash=False))
+@click.argument('output', type=click.Path(exists=True, readable=True,
+										allow_dash=False))
+@click.option('--translate', is_flag=True,
+			  help='Translate all extracted words.')	
+def get_words(input, output, translate):
+	"""Extracts words and, if needed, translates them."""
 
 	unique_words = MyList()
 	total_words_amount = 0
@@ -125,7 +139,7 @@ def get_unknown_words():
 	# reading and getting unique words
 	words = []
 
-	file = pysrt.open(path)
+	file = pysrt.open(input)
 
 	for sub in file:
 		words += re.findall(r"\b[a-zA-Z]+(?:'\w+)?\b", sub.text)
@@ -163,12 +177,12 @@ def get_unknown_words():
 
 	unknown_words = MyList(filter(lambda word: not vocabulary.word_in(word), unique_words))
 
-	if to_be_translated:
-		unknown_words = zip(unknown_words, translate(*unknown_words))
+	if translate:
+		unknown_words = zip(unknown_words, translate_words(*unknown_words))
 		unknown_words = MyList(map(lambda words: ' - '.join(words), unknown_words))
 
 	# output in file
-	with open(output_path, 'w') as out:
+	with open(output, 'w') as out:
 		for word in unknown_words:
 			out.write(word + '\n')
 
@@ -177,42 +191,30 @@ def get_unknown_words():
 	unknown_words_amount = unknown_words.size()
 	unknown_words_percent = (unknown_words_amount * 100) / unique_words_amount
 
-	system('clear')
-
 	print('Total words:\t{}'.format(total_words_amount))
 	print('Unique words:\t{}'.format(unique_words_amount))
 	print('Unknown words:\t{}/{:.2f}%'.format(unknown_words_amount, unknown_words_percent))
 
 
-vocabulary = MyList()
-vocabulary.read_words('Data/vocabulary.txt')
-
-system('clear')
-
-while True:
-	try:
-		choice = int(input('Add words in vocabulary - 1\n'
-		                   'Get unknown words - 2\n'
-		                   'Get number of words in the vocabulary - 3\n'
-		                   '> '))
-	except ValueError:
-		system('clear')
-
-		print('Wrong symbol(s)! Try again.', end='\n\n')
-	else:
-		if 0 < choice < 4:
-			break
-		else:
-			system('clear')
-
-			print('Wrong number! Try again.', end='\n\n')
-
-if choice == 1:
-	add_words_to_vocab()
+@vocab.command('extend')
+@click.argument('file', type=click.Path(exists=True, readable=True,
+										allow_dash=False))
+def add_words_to_vocab(file):
+	"""Add words to your vocabulary."""
 	
-elif choice == 2:
-	get_unknown_words()
-	
-else:
-	system('clear')
-	print('You have {} {} in your vocabulary'.format(vocabulary.size(), 'word' if vocabulary.size == 1 else 'words'))
+	with open(file) as file:
+		for word in file:
+			vocabulary.add(word.strip())
+
+	with open('Data/vocabulary.txt', 'w') as out:
+		for word in vocabulary:
+			out.write(word + '\n')
+
+	print('All words has been added to your vocabulary.')
+
+
+@vocab.command('size')
+def get_vocab_size():
+	"""Shows how much words you have in your vocabulary."""
+	print('You have {} {} in your vocabulary'.format(vocabulary.size(), 
+		'word' if vocabulary.size() == 1 else 'words'))
